@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.dev.keyboard-switcher",
+  "name": "Keyboard Switcher",
+  "version": "0.1.0",
+  "author": "dev",
+  "license": "MIT",
+  "description": "Trackpad-accessible control for built-in and Bluetooth keyboard devices in the Omarchy bar.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Keyboard Switcher",
+    "description": "Enable or disable built-in and Bluetooth keyboards without touching the trackpad.",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}
