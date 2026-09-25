@@ -85,3 +85,31 @@ def test_list_command_emits_live_device_json(tmp_path, capsys):
     payload = json.loads(capsys.readouterr().out)
     assert payload["ok"] is True
     assert payload["devices"][0]["enabled"] is True
+
+
+def test_list_treats_missing_hyprland_option_as_enabled(tmp_path, capsys):
+    name = "Built-in keyboard"
+    _write_event(tmp_path, "event3", name)
+
+    def runner(args, **kwargs):
+        if args[-1] == "devices":
+            return SimpleNamespace(returncode=0, stdout=json.dumps({"keyboards": [{"name": name}]}), stderr="")
+        if args[0] == "/fake/udevadm":
+            return SimpleNamespace(
+                returncode=0,
+                stdout="ID_BUS=isa\nID_PATH=platform-i8042-serio-0\n",
+                stderr="",
+            )
+        if args[2] == "getoption":
+            return SimpleNamespace(returncode=0, stdout="no such option\n", stderr="")
+        raise AssertionError(args)
+
+    assert main(
+        ["list"],
+        hyprctl_path="/fake/hyprctl",
+        udevadm_path="/fake/udevadm",
+        sysfs_root=tmp_path,
+        command_runner=runner,
+    ) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["devices"][0]["enabled"] is True

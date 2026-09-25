@@ -17,3 +17,7 @@ Ruling: Task 1's initial layout test checked later-task files and could never tu
 Final: fixed validator-safe test environment — test_publication_files_and_commands_are_documented RED→GREEN, suite 18/18; documented an external UV_PROJECT_ENVIRONMENT because Omarchy rejects the symlinks created by an in-plugin .venv.
 
 Final review: self-review (no subagent tool); one workflow finding fixed above, no remaining Critical or Important findings.
+
+Final: fixed live Hyprland device mapping — test_matches_hypr_normalized_name_to_sysfs_device_name RED→GREEN, suite 19/19; normalized Hyprland names conservatively before sysfs matching.
+
+Final: fixed live device safety/state handling — test_generic_platform_device_is_not_classified_as_internal and test_list_treats_missing_hyprland_option_as_enabled RED→GREEN, suite 21/21; generic platform controls remain unclassified and unset Hyprland options are treated as enabled.

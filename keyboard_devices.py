@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import argparse
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -82,7 +83,10 @@ def _live_devices(
                 ["-j", "getoption", option],
                 command_runner,
             )
-            device["enabled"] = parse_enabled_value(json.loads(option_json))
+            if option_json.strip().lower() == "no such option":
+                device["enabled"] = True
+            else:
+                device["enabled"] = parse_enabled_value(json.loads(option_json))
         except (CommandError, json.JSONDecodeError):
             device["enabled"] = None
     return devices
@@ -150,14 +154,20 @@ def parse_enabled_value(value: Mapping[str, object]) -> bool | None:
 
 
 def _event_candidates(sysfs_root: Path, name: str) -> list[str]:
+    normalized_name = _normalized_device_name(name)
     candidates: list[str] = []
     for name_file in sorted(sysfs_root.glob("class/input/event*/device/name")):
         try:
-            if name_file.read_text(encoding="utf-8").strip() == name:
+            sysfs_name = name_file.read_text(encoding="utf-8").strip()
+            if _normalized_device_name(sysfs_name) == normalized_name:
                 candidates.append("/dev/input/" + name_file.parts[-3])
         except OSError:
             continue
     return candidates
+
+
+def _normalized_device_name(name: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", name.casefold()).strip("-")
 
 
 def _metadata(reader: UdevReader, event: str) -> Mapping[str, str]:
@@ -174,10 +184,10 @@ def _classification(metadata: Mapping[str, str]) -> tuple[str, str]:
     if bus == "bluetooth" or "bluetooth" in path:
         return "bluetooth", "udev bus is bluetooth"
 
-    internal_buses = {"isa", "platform", "i2c", "serio", "acpi"}
+    internal_buses = {"isa", "i2c", "serio", "acpi"}
     if bus in internal_buses:
         return "internal", f"udev bus is {bus}; internal platform device"
-    if any(token in path for token in ("platform", "i8042", "serio")):
+    if any(token in path for token in ("i8042", "serio")):
         return "internal", "udev path contains platform/serio"
 
     return "unclassified", "udev metadata is not definitive"

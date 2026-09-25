@@ -53,6 +53,23 @@ def test_classifies_internal_keyboard_only_with_strong_platform_evidence(tmp_pat
     assert "platform" in devices[0]["reason"]
 
 
+def test_matches_hypr_normalized_name_to_sysfs_device_name(tmp_path):
+    _write_event(tmp_path, "event2", "AT Translated Set 2 keyboard")
+
+    devices = discover(
+        _hypr("at-translated-set-2-keyboard"),
+        tmp_path,
+        lambda path: {
+            "ID_BUS": "i8042",
+            "ID_PATH": "platform-i8042-serio-0",
+            "ID_INPUT_KEYBOARD": "1",
+        },
+    )
+
+    assert devices[0]["event"] == "/dev/input/event2"
+    assert devices[0]["category"] == "internal"
+
+
 def test_ambiguous_keyboard_is_not_assigned_to_a_toggle_group(tmp_path):
     name = "Mystery keyboard"
     _write_event(tmp_path, "event7", name)
@@ -61,6 +78,22 @@ def test_ambiguous_keyboard_is_not_assigned_to_a_toggle_group(tmp_path):
 
     assert devices[0]["category"] == "unclassified"
     assert devices[0]["enabled"] is None
+
+
+def test_generic_platform_device_is_not_classified_as_internal(tmp_path):
+    name = "Power Button"
+    _write_event(tmp_path, "event1", name)
+
+    devices = discover(
+        _hypr(name),
+        tmp_path,
+        lambda path: {
+            "ID_BUS": "platform",
+            "ID_PATH": "platform-PNP0C0C:00",
+        },
+    )
+
+    assert devices[0]["category"] == "unclassified"
 
 
 def test_exact_name_matching_prefers_keyboard_event_and_excludes_non_keyboard(tmp_path):
