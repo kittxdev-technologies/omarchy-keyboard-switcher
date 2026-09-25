@@ -4,11 +4,149 @@
 from __future__ import annotations
 
 import json
+import argparse
+import subprocess
+import sys
 from pathlib import Path
-from typing import Callable, Mapping
+from typing import Callable, Mapping, Sequence
 
 
 UdevReader = Callable[[str], Mapping[str, str]]
+CommandRunner = Callable[..., object]
+HYPRCTL = "/usr/bin/hyprctl"
+UDEVADM = "/usr/bin/udevadm"
+SYSFS_ROOT = Path("/sys")
+
+
+class CommandError(RuntimeError):
+    pass
+
+
+def _execute(
+    executable: str,
+    args: Sequence[str],
+    command_runner: CommandRunner = subprocess.run,
+) -> str:
+    result = command_runner(
+        [executable, *args],
+        capture_output=True,
+        text=True,
+        timeout=2,
+        check=False,
+    )
+    if getattr(result, "returncode", 1) != 0:
+        error = str(getattr(result, "stderr", "") or "command failed").strip()
+        raise CommandError(error[:240])
+    output = str(getattr(result, "stdout", ""))
+    if len(output) > 1_000_000:
+        raise CommandError("command output exceeded limit")
+    return output
+
+
+def _udev_reader(udevadm_path: str, command_runner: CommandRunner) -> UdevReader:
+    def read(event: str) -> Mapping[str, str]:
+        output = _execute(
+            udevadm_path,
+            ["info", "--query=property", "--name", event],
+            command_runner,
+        )
+        properties: dict[str, str] = {}
+        for line in output.splitlines():
+            key, separator, value = line.partition("=")
+            if separator and key and "\x00" not in line:
+                properties[key] = value
+        return properties
+
+    return read
+
+
+def _live_devices(
+    hyprctl_path: str,
+    udevadm_path: str,
+    sysfs_root: Path,
+    command_runner: CommandRunner,
+) -> list[dict]:
+    hypr_json = _execute(hyprctl_path, ["-j", "devices"], command_runner)
+    devices = discover(
+        hypr_json,
+        sysfs_root,
+        _udev_reader(udevadm_path, command_runner),
+    )
+    for device in devices:
+        if not device["event"]:
+            continue
+        option = f"device[{device['name']}]:enabled"
+        try:
+            option_json = _execute(
+                hyprctl_path,
+                ["-j", "getoption", option],
+                command_runner,
+            )
+            device["enabled"] = parse_enabled_value(json.loads(option_json))
+        except (CommandError, json.JSONDecodeError):
+            device["enabled"] = None
+    return devices
+
+
+def _json_output(payload: Mapping[str, object]) -> None:
+    print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+
+
+def build_keyword_args(name: str, enabled: bool) -> list[str]:
+    """Build one argv-safe Hyprland device toggle command."""
+
+    if not name:
+        raise ValueError("device name must not be empty")
+    return ["keyword", f"device[{name}]:enabled", "true" if enabled else "false"]
+
+
+def apply_group(
+    devices: list[Mapping[str, object]],
+    group: str,
+    enabled: bool,
+    runner: Callable[[list[str]], object],
+) -> dict:
+    """Apply a group toggle only to confidently classified keyboards."""
+
+    if group not in {"internal", "bluetooth", "all"}:
+        raise ValueError("unsupported keyboard group")
+
+    categories = {"internal", "bluetooth"} if group == "all" else {group}
+    changed: list[str] = []
+    failed: list[str] = []
+    for device in devices:
+        name = str(device.get("name", ""))
+        if device.get("category") not in categories or not name:
+            continue
+        if device.get("enabled") is not True and device.get("enabled") is not False:
+            continue
+        if bool(device["enabled"]) == enabled:
+            continue
+        try:
+            runner(build_keyword_args(name, enabled))
+        except Exception:
+            failed.append(name)
+        else:
+            changed.append(name)
+
+    return {"ok": not failed, "changed": changed, "failed": failed}
+
+
+def parse_enabled_value(value: Mapping[str, object]) -> bool | None:
+    """Parse `hyprctl getoption -j` while treating an unset option as enabled."""
+
+    if value.get("set") is False:
+        return True
+    if isinstance(value.get("int"), int) and value["int"] in (0, 1):
+        return bool(value["int"])
+    raw = value.get("str")
+    if isinstance(raw, str):
+        lowered = raw.strip().lower()
+        if lowered == "true":
+            return True
+        if lowered == "false":
+            return False
+    return None
 
 
 def _event_candidates(sysfs_root: Path, name: str) -> list[str]:
@@ -101,3 +239,47 @@ def group_state(devices: list[Mapping[str, object]], category: str) -> str:
     if all(state is False for state in states):
         return "off"
     return "mixed"
+
+
+def main(
+    argv: Sequence[str] | None = None,
+    *,
+    hyprctl_path: str = HYPRCTL,
+    udevadm_path: str = UDEVADM,
+    sysfs_root: Path = SYSFS_ROOT,
+    command_runner: CommandRunner = subprocess.run,
+) -> int:
+    parser = argparse.ArgumentParser(prog="keyboard-devices")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers.add_parser("list")
+    set_parser = subparsers.add_parser("set-group")
+    set_parser.add_argument("--group", choices=("internal", "bluetooth", "all"), required=True)
+    set_parser.add_argument("--enabled", choices=("true", "false"), required=True)
+    args = parser.parse_args(argv)
+
+    try:
+        devices = _live_devices(
+            hyprctl_path,
+            udevadm_path,
+            Path(sysfs_root),
+            command_runner,
+        )
+        if args.command == "list":
+            _json_output({"ok": True, "devices": devices})
+            return 0
+
+        desired = args.enabled == "true"
+
+        def runner(command_args: list[str]) -> None:
+            _execute(hyprctl_path, command_args, command_runner)
+
+        result = apply_group(devices, args.group, desired, runner)
+        _json_output(result)
+        return 0 if result["ok"] else 1
+    except (CommandError, OSError, ValueError, json.JSONDecodeError) as error:
+        _json_output({"ok": False, "devices": [], "error": str(error)[:240]})
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
