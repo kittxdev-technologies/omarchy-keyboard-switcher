@@ -15,3 +15,5 @@ Task 6: complete — full suite passes (18 passed), manifest validation exits 0,
 Ruling: Task 1's initial layout test checked later-task files and could never turn green at the scaffold stage; narrowed it to scaffold-owned files and kept full publish-layout coverage for Task 4 — this costs no coverage and restores independent task completion.
 
 Final: fixed validator-safe test environment — test_publication_files_and_commands_are_documented RED→GREEN, suite 18/18; documented an external UV_PROJECT_ENVIRONMENT because Omarchy rejects the symlinks created by an in-plugin .venv.
+
+Final review: self-review (no subagent tool); one workflow finding fixed above, no remaining Critical or Important findings.
