@@ -21,3 +21,5 @@ Final review: self-review (no subagent tool); one workflow finding fixed above, 
 Final: fixed live Hyprland device mapping — test_matches_hypr_normalized_name_to_sysfs_device_name RED→GREEN, suite 19/19; normalized Hyprland names conservatively before sysfs matching.
 
 Final: fixed live device safety/state handling — test_generic_platform_device_is_not_classified_as_internal and test_list_treats_missing_hyprland_option_as_enabled RED→GREEN, suite 21/21; generic platform controls remain unclassified and unset Hyprland options are treated as enabled.
+
+Final: fixed external widget load — test_bar_widget_imports_ipc_handler_module RED→GREEN, suite 22/22; imported Quickshell.Io for the bar widget's IpcHandler and restarted the Omarchy shell to clear the failed component cache.

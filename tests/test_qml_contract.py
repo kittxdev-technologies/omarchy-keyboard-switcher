@@ -25,6 +25,13 @@ def test_device_service_uses_fixed_helper_and_group_names_only():
     assert "sh -c" not in source
 
 
+def test_bar_widget_imports_ipc_handler_module():
+    source = (ROOT / "BarWidget.qml").read_text(encoding="utf-8")
+
+    assert "import Quickshell.Io" in source
+    assert "IpcHandler" in source
+
+
 def test_panel_contains_mouse_recovery_controls():
     source = (ROOT / "Panel.qml").read_text(encoding="utf-8")
 
@@ -37,4 +44,3 @@ def test_panel_contains_mouse_recovery_controls():
 def test_publish_files_exist():
     required = {"manifest.json", "BarWidget.qml", "Panel.qml", "DeviceService.qml", "Model.js"}
     assert required <= {path.name for path in ROOT.iterdir()}
-
