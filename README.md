@@ -21,24 +21,24 @@ Read the source and [SECURITY.md](SECURITY.md) before installing.
 
 ## Install
 
-The provisional development ID is `io.github.dev.keyboard-switcher`. Before a
-community release, replace `dev` with the publisher's real GitHub namespace in
-`manifest.json`, `BarWidget.qml`, `Panel.qml`, `shell.json`, and the README.
+The published plugin ID is `io.github.kittxdev-technologies.keyboard-switcher`.
+It uses the publisher's GitHub namespace so the ID remains unique in the
+community marketplace.
 
 From a public GitHub repository:
 
 ```sh
-omarchy plugin add https://github.com/REPLACE-ME/omarchy-keyboard-switcher.git --enable
-omarchy bar move io.github.dev.keyboard-switcher --section right
+omarchy plugin add https://github.com/kittxdev-technologies/omarchy-keyboard-switcher.git --enable
+omarchy bar move io.github.kittxdev-technologies.keyboard-switcher --section right
 ```
 
 For this local checkout, run the safe installer from the repository root:
 
 ```sh
 ./install-local.sh
-omarchy plugin validate ~/.config/omarchy/plugins/io.github.dev.keyboard-switcher
+omarchy plugin validate ~/.config/omarchy/plugins/io.github.kittxdev-technologies.keyboard-switcher
 omarchy-shell shell rescanPlugins
-omarchy plugin enable io.github.dev.keyboard-switcher right
+omarchy plugin enable io.github.kittxdev-technologies.keyboard-switcher right
 ```
 
 The installer backs up `~/.config/hypr/input.lua` and
@@ -73,7 +73,7 @@ are required.
 ## Remove
 
 ```sh
-omarchy plugin remove io.github.dev.keyboard-switcher
+omarchy plugin remove io.github.kittxdev-technologies.keyboard-switcher
 ```
 
 Plugin removal does not change the trackpad, Bluetooth radio, keyboard layout,

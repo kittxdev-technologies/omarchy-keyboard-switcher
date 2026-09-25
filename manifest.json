@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "io.github.dev.keyboard-switcher",
+  "id": "io.github.kittxdev-technologies.keyboard-switcher",
   "name": "Keyboard Switcher",
   "version": "0.1.0",
-  "author": "dev",
+  "author": "Kittxdev Technologies",
   "license": "MIT",
   "description": "Trackpad-accessible control for built-in and Bluetooth keyboard devices in the Omarchy bar.",
   "kinds": [

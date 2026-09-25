@@ -14,7 +14,7 @@ import time
 from pathlib import Path
 
 
-PLUGIN_ID = "io.github.dev.keyboard-switcher"
+PLUGIN_ID = "io.github.kittxdev-technologies.keyboard-switcher"
 PLUGIN_FILES = (
     "manifest.json",
     "BarWidget.qml",

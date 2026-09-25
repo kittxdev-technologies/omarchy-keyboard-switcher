@@ -7,7 +7,7 @@ def test_manifest_declares_a_namespaced_single_bar_widget():
     manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
 
     assert manifest["schemaVersion"] == 1
-    assert manifest["id"] == "io.github.dev.keyboard-switcher"
+    assert manifest["id"] == "io.github.kittxdev-technologies.keyboard-switcher"
     assert not manifest["id"].startswith("omarchy.")
     assert manifest["kinds"] == ["bar-widget"]
     assert manifest["entryPoints"]["barWidget"] == "BarWidget.qml"

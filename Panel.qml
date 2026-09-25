@@ -8,7 +8,7 @@ import "Model.js" as Model
 
 Panel {
   id: root
-  moduleName: "io.github.dev.keyboard-switcher"
+  moduleName: "io.github.kittxdev-technologies.keyboard-switcher"
   manageIpc: false
 
   property var anchorItem: null

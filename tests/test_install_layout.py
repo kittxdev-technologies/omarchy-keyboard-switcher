@@ -34,10 +34,9 @@ def test_add_bar_widget_places_it_once_before_bluetooth():
         },
     }
 
-    result = add_bar_widget(json.dumps(source), "io.github.dev.keyboard-switcher")
+    result = add_bar_widget(json.dumps(source), "io.github.kittxdev-technologies.keyboard-switcher")
     data = json.loads(result)
     ids = [item["id"] for item in data["bar"]["layout"]["right"]]
 
-    assert ids.count("io.github.dev.keyboard-switcher") == 1
-    assert ids.index("io.github.dev.keyboard-switcher") < ids.index("omarchy.bluetooth")
-
+    assert ids.count("io.github.kittxdev-technologies.keyboard-switcher") == 1
+    assert ids.index("io.github.kittxdev-technologies.keyboard-switcher") < ids.index("omarchy.bluetooth")
