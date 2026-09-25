@@ -83,7 +83,8 @@ or XKB files. If you used `install-local.sh`, the timestamped backups beside
 ## Development and validation
 
 ```sh
-UV_CACHE_DIR=/tmp/keyboard-switcher-uv-cache uv run pytest -q
+UV_CACHE_DIR=/tmp/keyboard-switcher-uv-cache \
+UV_PROJECT_ENVIRONMENT=/tmp/keyboard-switcher-uv-env uv run pytest -q
 omarchy plugin validate .
 /usr/lib/qt6/bin/qmllint -I "$OMARCHY_PATH/shell" \
   BarWidget.qml Panel.qml DeviceService.qml
@@ -96,4 +97,3 @@ the live shell is the final QML integration check.
 ## License
 
 MIT — see [LICENSE](LICENSE).
-
