@@ -23,3 +23,5 @@ Final: fixed live Hyprland device mapping — test_matches_hypr_normalized_name_
 Final: fixed live device safety/state handling — test_generic_platform_device_is_not_classified_as_internal and test_list_treats_missing_hyprland_option_as_enabled RED→GREEN, suite 21/21; generic platform controls remain unclassified and unset Hyprland options are treated as enabled.
 
 Final: fixed external widget load — test_bar_widget_imports_ipc_handler_module RED→GREEN, suite 22/22; imported Quickshell.Io for the bar widget's IpcHandler and restarted the Omarchy shell to clear the failed component cache.
+
+Final: fixed Lua-parser toggle execution and session state — test_build_device_eval_args_keeps_untrusted_name_in_one_argv_item, test_set_group_rejects_hyprland_eval_error_with_zero_exit, and test_apply_group_reasserts_requested_state_when_readback_is_stale RED→GREEN, suite 25/25; use argv-safe hl.device() eval commands, reject exit-0 error text, and always reassert requested device state.

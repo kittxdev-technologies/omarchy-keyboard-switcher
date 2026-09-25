@@ -6,6 +6,8 @@ Item {
   id: root
 
   property var devices: []
+  property var sessionState: ({})
+  property bool pendingEnabled: true
   property string errorText: ""
   property string actionText: ""
   readonly property bool busy: listProcess.running || actionProcess.running
@@ -33,16 +35,42 @@ Item {
         errorText = String(payload.error || "Keyboard discovery failed")
         return
       }
-      devices = payload.devices || []
+      var nextDevices = payload.devices || []
+      var seen = ({})
+      for (var i = 0; i < nextDevices.length; i++) {
+        var name = String(nextDevices[i].name || "")
+        seen[name] = true
+        if (sessionState[name] !== undefined)
+          nextDevices[i].enabled = sessionState[name]
+      }
+      for (var oldName in sessionState) {
+        if (!seen[oldName]) delete sessionState[oldName]
+      }
+      devices = nextDevices
       errorText = ""
     } catch (error) {
       errorText = "Keyboard helper returned invalid data"
     }
   }
 
+  function rememberChanges(changed) {
+    var updated = (devices || []).slice()
+    for (var i = 0; i < changed.length; i++) {
+      var name = String(changed[i] || "")
+      if (!name) continue
+      sessionState[name] = pendingEnabled
+      for (var j = 0; j < updated.length; j++) {
+        if (String(updated[j].name || "") === name)
+          updated[j].enabled = pendingEnabled
+      }
+    }
+    devices = updated
+  }
+
   function parseAction(raw) {
     try {
       var payload = JSON.parse(raw || "")
+      rememberChanges(payload.changed || [])
       if (!payload.ok) {
         actionText = "Some devices could not be changed"
         errorText = String(payload.error || actionText)
@@ -60,6 +88,7 @@ Item {
 
   function setGroup(group, enabled) {
     if (actionProcess.running || (group !== "internal" && group !== "bluetooth")) return
+    pendingEnabled = enabled
     actionText = enabled ? "Enabling keyboards…" : "Disabling keyboards…"
     actionProcess.command = [root.helperPath, "set-group", "--group", group,
                              "--enabled", enabled ? "true" : "false"]
@@ -68,6 +97,7 @@ Item {
 
   function restoreDefaults() {
     if (actionProcess.running) return
+    pendingEnabled = true
     actionText = "Restoring keyboard defaults…"
     actionProcess.command = [root.helperPath, "set-group", "--group", "all",
                              "--enabled", "true"]

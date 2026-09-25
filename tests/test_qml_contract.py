@@ -32,6 +32,14 @@ def test_bar_widget_imports_ipc_handler_module():
     assert "IpcHandler" in source
 
 
+def test_device_service_tracks_successful_session_toggles():
+    source = (ROOT / "DeviceService.qml").read_text(encoding="utf-8")
+
+    assert "sessionState" in source
+    assert "pendingEnabled" in source
+    assert "payload.changed" in source
+
+
 def test_panel_contains_mouse_recovery_controls():
     source = (ROOT / "Panel.qml").read_text(encoding="utf-8")
 

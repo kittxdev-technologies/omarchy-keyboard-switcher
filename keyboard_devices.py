@@ -96,12 +96,14 @@ def _json_output(payload: Mapping[str, object]) -> None:
     print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
 
 
-def build_keyword_args(name: str, enabled: bool) -> list[str]:
-    """Build one argv-safe Hyprland device toggle command."""
+def build_device_eval_args(name: str, enabled: bool) -> list[str]:
+    """Build one argv-safe Hyprland Lua device toggle command."""
 
     if not name:
         raise ValueError("device name must not be empty")
-    return ["keyword", f"device[{name}]:enabled", "true" if enabled else "false"]
+    lua_name = json.dumps(name, ensure_ascii=False)
+    lua_enabled = "true" if enabled else "false"
+    return ["eval", f"hl.device({{ name = {lua_name}, enabled = {lua_enabled} }})"]
 
 
 def apply_group(
@@ -122,12 +124,8 @@ def apply_group(
         name = str(device.get("name", ""))
         if device.get("category") not in categories or not name:
             continue
-        if device.get("enabled") is not True and device.get("enabled") is not False:
-            continue
-        if bool(device["enabled"]) == enabled:
-            continue
         try:
-            runner(build_keyword_args(name, enabled))
+            runner(build_device_eval_args(name, enabled))
         except Exception:
             failed.append(name)
         else:
@@ -281,7 +279,9 @@ def main(
         desired = args.enabled == "true"
 
         def runner(command_args: list[str]) -> None:
-            _execute(hyprctl_path, command_args, command_runner)
+            output = _execute(hyprctl_path, command_args, command_runner)
+            if output.strip().lower() != "ok":
+                raise CommandError(output.strip() or "Hyprland rejected device update")
 
         result = apply_group(devices, args.group, desired, runner)
         _json_output(result)
